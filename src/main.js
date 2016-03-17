@@ -18,7 +18,7 @@ function main(sources) {
     const sinks = {
         Handshake: message$
     };
-    
+
     return sinks;
 }
 
