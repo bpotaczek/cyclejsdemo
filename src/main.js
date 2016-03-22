@@ -1,34 +1,46 @@
 'use strict'
 
 import Cycle from '@cycle/core';
-import makeHandshakeDriver from './handshake.js';
+import {li, div, label, ul, h1, input, button, makeDOMDriver} from '@cycle/dom';
+import {makeHTTPDriver} from '@cycle/http';
+import Rx from 'rx';
+//import makeHandshakeDriver from './handshake.js';
 
 function main(sources) {
-    console.log(sources);
-    const {Handshake} = sources;
+    let a = 0;
+    const search$ = sources.DOM.select('.run').events('click')
+        .map(() => {
+            return {
+                url: 'https://api.github.com/users',
+                method: 'GET'
+            };
+        });
+    const user$ = sources.HTTP
+        .mergeAll()
+        .map(response => response.body)
+        .startWith([]);
 
-    console.log(Handshake);
-    const message$ = Handshake
-        .startWith('world from')
-        .map(message => {
-            console.log(message);
-            return message;
-        }) ;
+    const divs$ = user$.map(users => 
+        div(null, [
+            button('.run', 'Run'),
+            ul({className: 'user-list'}, users.map(user =>
+                li('.user-details', [
+                    div({className: 'user-login'}, user.login),
+                    div({className: 'user-id'}, user.id)
+                ]))
+            )
+        ])
+    );
 
-    const sinks = {
-        Handshake: message$
+    return {
+        DOM: divs$,
+        HTTP: search$
     };
-
-    return sinks;
 }
 
-const handshakeDriverOptions = {
-    greeting: 'Hello',
-    name: 'Brady'
-};
-
 const sources = {
-    Handshake: makeHandshakeDriver(handshakeDriverOptions)
+    DOM: makeDOMDriver('#app'),
+    HTTP: makeHTTPDriver()
 };
 
 Cycle.run(main, sources);
